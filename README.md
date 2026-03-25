@@ -172,6 +172,14 @@ Each skill contains exact API patterns, so Claude never guesses:
 - **PII masking** — emails and addresses masked before display (`r***@e***.com`)
 - **Confirmation gates** — all write operations pause for approval
 
+### Why skills produce more accurate results than an MCP server
+
+**Magento's API has many non-obvious traps.** Claude's general training knowledge covers the official docs but not the gotchas: the `searchCriteria[filterGroups][0][filters][0][field]=` bracket syntax that breaks with shell glob expansion, EAV attributes storing integer option IDs instead of labels, the Bearer token setting that's off by default in Magento 2.4+, `/order/{id}/ship` versus `/shipment` (the latter creates duplicates), and more. Skills document every pitfall explicitly. Claude copies known-good patterns rather than generating from approximate recall.
+
+**Fewer tokens per operation.** MCP tool calls carry protocol overhead — JSON-RPC envelopes, input schema validation, output wrapping, tool listing on session start. With skills, the relevant patterns are already in context and Claude executes `curl` directly. No schema parsing, no tool-call envelope.
+
+**Fewer network roundtrips.** An MCP server running over HTTP adds a full hop for every operation: Claude → MCP server → Magento (two network calls per tool call). Skills call Magento directly — one hop. Multi-step operations (e.g., find order → check shipment → get tracking) can be chained in a single bash execution rather than N sequential tool calls.
+
 Internally, skills use Magento's public GraphQL endpoint (storefront reads, no token) and the admin REST API (`/rest/{store_code}/V1/...`, Bearer token). The same API knowledge is encoded in [MageMCP](https://github.com/magendooro/magemcp) as a Python MCP server — use MageMCP if you need to connect AI agents other than Claude Code.
 
 ---
