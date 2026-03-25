@@ -1,100 +1,111 @@
 # Magento Claude Skills
 
-Claude Code skills for interacting with Magento 2 / Adobe Commerce stores directly via REST and GraphQL — no MCP server required.
+> **For store operators.** Ask Claude about your Magento store in plain language — look up orders, check inventory, manage customers, update products, and run reports. Claude calls your store's REST and GraphQL APIs directly using `curl`. No server to run, no extra process, no MCP client to configure.
 
-Each skill gives Claude exact API call patterns, authentication headers, endpoint URLs, and error handling for a specific Magento domain. Claude calls your store's APIs directly using `curl`. No intermediate service, no extra process to run.
+---
+
+## Who this is for
+
+**Store operators, merchants, and support agents** who want to interact with a live Magento 2 / Adobe Commerce store through Claude Code.
+
+| Role | Example tasks |
+|------|--------------|
+| Support agent | "Find order #000012345 for roni_cost@example.com and check if it has shipped" |
+| Operations manager | "Show me all orders over €200 placed in the last 7 days that are still pending" |
+| Merchandiser | "Set the special price of SKU WS03-XS-Red to €24.99" |
+| Store manager | "How much revenue did we generate this month, excluding canceled orders?" |
+| Marketing | "Generate 20 unique coupon codes for the Summer Sale rule, valid through July 31" |
+| Support agent | "What is the store's return policy?" |
+
+> **Not for Magento PHP developers** writing modules, themes, or code. For that, see [hyva-themes/hyva-ai-tools](https://github.com/hyva-themes/hyva-ai-tools) (Hyva frontend development) or [rubenzantingh/claude-code-magento-agents](https://github.com/rubenzantingh/claude-code-magento-agents) (general Magento development).
+
+---
 
 ## Skills
 
-| Skill | `/command` | Transport | What it does |
-|-------|-----------|-----------|--------------|
-| `magento-connect` | `/magento-connect` | GraphQL + REST | Verify store connectivity, show config |
-| `magento-products` | `/magento-products` | GraphQL | Search catalog, product detail, categories, facets |
-| `magento-orders` | `/magento-orders` | REST admin | Orders, tracking, analytics, abandoned carts |
-| `magento-fulfillment` | `/magento-fulfillment` | REST admin | Invoices, shipments, credit memos, returns, email |
-| `magento-customers` | `/magento-customers` | REST admin | Customer search, detail, order history |
-| `magento-inventory` | `/magento-inventory` | REST admin | Salable qty, source items, bulk updates |
-| `magento-product-admin` | `/magento-product-admin` | REST admin | Product search/update, EAV attribute resolution |
-| `magento-content` | `/magento-content` | GraphQL + REST | CMS pages, policy pages, blocks |
-| `magento-promotions` | `/magento-promotions` | REST admin | Sales rules, coupon search, coupon generation |
-| `magento-api` | _(background)_ | — | API reference, loaded automatically |
+| Skill | `/command` | What it does |
+|-------|-----------|--------------|
+| `magento-connect` | `/magento-connect` | Verify store connectivity, show store config |
+| `magento-products` | `/magento-products` | Search catalog by text, category, price, attributes — with facets |
+| `magento-orders` | `/magento-orders` | Orders, tracking, analytics, abandoned carts |
+| `magento-fulfillment` | `/magento-fulfillment` | Invoices, shipments, credit memos, returns, email |
+| `magento-customers` | `/magento-customers` | Customer search, detail, order history |
+| `magento-inventory` | `/magento-inventory` | Salable qty, source items (MSI), bulk updates |
+| `magento-product-admin` | `/magento-product-admin` | Product search, update price/status, EAV attribute resolution |
+| `magento-content` | `/magento-content` | CMS pages — return policy, shipping info, any policy page |
+| `magento-promotions` | `/magento-promotions` | Sales rules, coupon search, coupon generation |
+| `magento-api` | _(background)_ | REST/GraphQL reference — loaded automatically when needed |
+
+All read operations work out of the box. Write operations (cancel order, update inventory, generate coupons, etc.) ask for confirmation before executing.
+
+---
 
 ## Prerequisites
 
 - [Claude Code](https://code.claude.com) installed
-- `curl` and `jq` available in your shell
-- A Magento 2 or Adobe Commerce store (2.3+)
+- `curl` and `jq` in your `PATH`
+- Magento 2.3+ or Adobe Commerce, reachable over HTTPS
 - An integration token for admin operations ([how to create one](#creating-an-integration-token))
+
+---
 
 ## Quick Start
 
-### Option A — `--add-dir` (recommended, no copying)
-
-Clone once, point Claude at the repo:
+### Option A — `--add-dir` (recommended, nothing to copy)
 
 ```bash
-git clone https://github.com/magendooroo/magento-claude-skills.git ~/magento-claude-skills
-```
+git clone https://github.com/magendooro/magento-claude-skills.git ~/magento-claude-skills
 
-Set your environment variables:
-```bash
 export MAGENTO_BASE_URL=https://your-store.example.com
 export MAGENTO_ADMIN_TOKEN=your-integration-token
-```
 
-Start Claude Code with the skills directory added:
-```bash
 claude --add-dir ~/magento-claude-skills
 ```
 
-Skills are available immediately. Ask Claude about orders, inventory, products — it will use the right skill automatically. Or invoke directly: `/magento-orders recent orders`.
+Claude picks up the skills automatically. Ask naturally or invoke directly:
 
-### Option B — Install to personal skills (available in all projects)
-
-```bash
-git clone https://github.com/magendooroo/magento-claude-skills.git
-cd magento-claude-skills
-./install.sh
+```
+Show me the last 10 orders
+/magento-inventory check WS03-XS-Red
 ```
 
-Skills are copied to `~/.claude/skills/` and are available in every Claude Code session.
+### Option B — Install to personal skills (all projects)
 
-### Option C — Install to a project
+```bash
+git clone https://github.com/magendooro/magento-claude-skills.git
+cd magento-claude-skills && ./install.sh
+```
 
-Inside your project directory:
+Copies skills to `~/.claude/skills/`. Available in every Claude Code session without `--add-dir`.
+
+### Option C — Install to a specific project
 
 ```bash
 ./install.sh --project
 ```
 
-Skills are copied to `.claude/skills/` in your current project.
+Copies to `./.claude/skills/` in the current directory only.
+
+---
 
 ## Configuration
-
-Two environment variables are required for admin operations:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `MAGENTO_BASE_URL` | Yes | Store base URL, no trailing slash. Example: `https://shop.example.com` |
-| `MAGENTO_ADMIN_TOKEN` | Yes (admin skills) | Integration Bearer token — see below |
-| `MAGENTO_STORE_CODE` | No | Store view code, defaults to `default` |
-
-Set them in your shell profile or pass them when starting Claude:
-```bash
-export MAGENTO_BASE_URL=https://shop.example.com
-export MAGENTO_ADMIN_TOKEN=abc123xyz...
-claude --add-dir ~/magento-claude-skills
-```
+| `MAGENTO_ADMIN_TOKEN` | Yes (admin skills) | Integration Bearer token |
+| `MAGENTO_STORE_CODE` | No | Store view code, default: `default` |
 
 ### Creating an Integration Token
 
 In Magento Admin: **System → Extensions → Integrations → Add New Integration**
 
 1. Give it a name (e.g. "Claude Skills")
-2. Under **API** tab, select all resources (or scope to what you need)
-3. Save → Activate → Copy the **Access Token**
+2. **API** tab → select all resources (or scope to what you need)
+3. Save → Activate → copy the **Access Token**
 
-Then enable Bearer token mode (required in Magento 2.4+):
+Enable Bearer token mode (required in Magento 2.4+):
+
 ```bash
 bin/magento config:set oauth/consumer/enable_integration_as_bearer 1
 bin/magento cache:flush config
@@ -102,75 +113,90 @@ bin/magento cache:flush config
 
 Or in Admin: **Stores → Configuration → Services → OAuth → Allow OAuth Access Tokens to be used as standalone Bearer tokens → Yes**
 
+---
+
 ## Usage Examples
 
-Once skills are loaded and env vars are set, ask Claude naturally:
+### Support — order lookup and tracking
 
 ```
-Show me the last 10 orders
-```
-```
-Is SKU WS03-XS-Red in stock?
-```
-```
-Find orders for customer john@example.com
-```
-```
-What is the return policy?
-```
-```
-Search for products matching "yoga pants" under $50
-```
-```
-Show revenue for this month
-```
-```
-Generate 5 coupons for rule #4
+Find order #000000042
+Has order 42 shipped? What's the tracking number?
+Show all orders for roni_cost@example.com
 ```
 
-Or invoke directly with `/skill-name [arguments]`:
+### Operations — reporting and filtering
+
 ```
-/magento-orders recent orders
-/magento-inventory check WS03-XS-Red
-/magento-promotions active rules
+Show me pending orders from the last 24 hours
+What is the revenue for March 2026, excluding canceled orders?
+List high-value abandoned carts over €150
 ```
 
-### Write Operations
+### Catalog and inventory
 
-Skills that modify data (cancel order, update inventory, generate coupons, etc.) always ask for confirmation before executing. Claude will tell you exactly what it's about to do and wait for your approval.
+```
+Search for products matching "yoga pants" priced under $50
+Is SKU WS03-XS-Red in stock? How many units?
+Set the special price of WS03-XS-Red to €24.99
+```
+
+### Content and promotions
+
+```
+What is the store's return policy?
+Show all active promotions
+Generate 10 coupon codes for the Summer Sale discount rule
+```
+
+### Write operations
+
+All changes require confirmation. Claude shows exactly what it will do and waits:
+
+```
+> Cancel order #000000042
+
+I'll cancel order #000000042 (Veronica Costello, €36.39, status: processing).
+This cannot be undone if the order has been invoiced. Confirm? (yes/no)
+```
+
+---
 
 ## How It Works
 
-These skills teach Claude the exact API patterns so it never guesses:
+Each skill contains exact API patterns, so Claude never guesses:
 
-- **Exact `curl` commands** with correct headers, URL encoding, and `-g` flag for `searchCriteria` brackets
-- **Decision tables** — maps natural language to the right operation
-- **Error handling** — known Magento error messages and their fixes documented in the skill
-- **PII masking rules** — customer data is masked before display
-- **Confirmation patterns** — write operations require explicit user approval
+- **Exact `curl` commands** — correct headers, `-g` flag for `searchCriteria` brackets, URL encoding
+- **Decision tables** — maps natural language requests to the right API operation
+- **Error docs** — known Magento error messages with explanations and fixes
+- **PII masking** — emails and addresses masked before display (`r***@e***.com`)
+- **Confirmation gates** — all write operations pause for approval
 
-This is the same information encoded in [MageMCP](https://github.com/magendooroo/magemcp), but as Claude Code skills instead of an MCP server. Skills are Claude Code-only; MageMCP works with any MCP-compatible client.
+Internally, skills use Magento's public GraphQL endpoint (storefront reads, no token) and the admin REST API (`/rest/{store_code}/V1/...`, Bearer token). The same API knowledge is encoded in [MageMCP](https://github.com/magendooro/magemcp) as a Python MCP server — use MageMCP if you need to connect AI agents other than Claude Code.
+
+---
 
 ## Updating
 
 ```bash
-cd ~/magento-claude-skills
-git pull
+cd ~/magento-claude-skills && git pull
+# If you used install.sh, re-run it to update copies:
+./install.sh
 ```
 
-If you used `--add-dir`, changes take effect in the next Claude Code session. If you used `install.sh`, re-run it to update the copies.
+---
 
 ## Troubleshooting
 
-**Skills not appearing:** Run `/magento-connect check` to verify Claude can see the skills.
+| Symptom | Fix |
+|---------|-----|
+| Skills don't appear | Run `/magento-connect check` |
+| HTTP 401 on admin calls | Bearer token mode not enabled — see [Integration Token](#creating-an-integration-token) |
+| `get-product-salable-qty` returns 404 | MSI salable-qty API unavailable; skill falls back to source items automatically |
+| `[` or `]` errors in curl | All calls use `curl -g` — check curl version |
+| "Request does not match any route" | Wrong `MAGENTO_STORE_CODE` — use `default` |
 
-**HTTP 401 on admin endpoints:** Token is invalid or Bearer mode is not enabled. See [Creating an Integration Token](#creating-an-integration-token).
-
-**`/V1/inventory/get-product-salable-qty` returns 404:** MSI salable-qty API not available on this store. The `magento-inventory` skill falls back to source items and legacy stock automatically.
-
-**`curl` bracket errors:** All searchCriteria calls use `curl -g` to disable glob expansion. If you see errors about `[` or `]`, check your curl version.
-
-**"Request does not match any route":** The store code in the URL doesn't exist. Check `MAGENTO_STORE_CODE` or use `default`.
+---
 
 ## License
 
