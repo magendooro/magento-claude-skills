@@ -2,6 +2,7 @@
 name: magento-api
 description: Quick reference for Magento 2 REST and GraphQL API endpoints, searchCriteria syntax, and authentication patterns. Background knowledge — loaded automatically when working with Magento APIs.
 user-invocable: false
+allowed-tools: []
 ---
 
 # Magento API Reference
@@ -136,12 +137,3 @@ Condition types: `eq`, `neq`, `gt`, `gteq`, `lt`, `lteq`, `like`, `in`, `notnull
 - **GraphQL**: Same bearer token in header. Customer queries require customer token. Admin-only queries (orders list, customer search) require admin token or integration token.
 - **Integration tokens**: Long-lived, configured in Admin > System > Integrations. Preferred for MCP server use.
 
-## Notes for MCP Tool Implementation
-
-- Use `httpx.AsyncClient` for all API calls (already a project dependency)
-- All connectors live in `src/magemcp/connectors/`
-- The base URL and auth token should come from `pydantic-settings` configuration
-- Always handle pagination — Magento defaults to 20 items per page
-- Return JSON strings from tools (MCP protocol expectation)
-- For read-only tools, use only GET requests
-- Write operations (POST/PUT/DELETE) must go through the policy engine in `src/magemcp/policy/`

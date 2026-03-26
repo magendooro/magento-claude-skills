@@ -2,7 +2,7 @@
 name: magento-content
 description: Read and manage Magento CMS pages and blocks via GraphQL (storefront) and admin REST API. Covers policy pages, store content, page search, and page updates. Use for 'what is your return policy', 'show shipping info', or any CMS content question.
 argument-hint: "[page identifier, 'returns policy', 'shipping', 'search <term>', or 'update <id>']"
-allowed-tools: Bash(curl:*), Bash(echo:*), Bash(jq:*)
+allowed-tools: Bash(curl:*), Bash(echo:*), Bash(jq:*), Bash(python3:*)
 effort: medium
 ---
 
@@ -130,17 +130,15 @@ curl -s -g "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/cmsBlock/
 **Confirm:** "I'll update the `${PAGE_TITLE}` page (ID: ${PAGE_ID}). Changes: [describe]. Confirm? (yes/no)"
 
 ```bash
+# Use jq to safely build JSON — prevents injection from non-integer PAGE_ID
 curl -s -X PUT "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/cmsPage/${PAGE_ID}" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "page": {
-      "id": '${PAGE_ID}',
-      "title": "Returns Policy",
-      "content": "<p>Updated return policy content here.</p>",
-      "is_active": 1
-    }
-  }'
+  -d "$(jq -n \
+    --argjson id "${PAGE_ID}" \
+    --arg title "Returns Policy" \
+    --arg content "<p>Updated return policy content here.</p>" \
+    '{"page": {"id": $id, "title": $title, "content": $content, "is_active": 1}}')"
 ```
 
 **Notes:**

@@ -2,7 +2,7 @@
 name: magento-products
 description: Search and explore Magento product catalog via GraphQL. Supports text search, category/price/attribute filters, aggregations (faceted search), and full product detail by SKU. Use for any product-related question.
 argument-hint: "[search query or SKU]"
-allowed-tools: Bash(curl:*), Bash(echo:*), Bash(jq:*)
+allowed-tools: Bash(curl:*), Bash(echo:*), Bash(jq:*), Bash(python3:*)
 effort: high
 ---
 

@@ -98,22 +98,16 @@ The rule must have `coupon_type: 3` (auto-generated) for this endpoint to work.
 **Confirm:** "I'll generate ${QTY} coupon(s) for rule `${RULE_NAME}` (ID: ${RULE_ID}), length ${LENGTH} chars, prefix `${PREFIX}`. Confirm? (yes/no)"
 
 ```bash
+# Use jq to safely build JSON — prevents injection if RULE_ID/QTY are non-numeric
 curl -s -X POST "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/salesRules/${RULE_ID}/generate-coupon" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "couponSpec": {
-      "rule_id": '${RULE_ID}',
-      "quantity": 5,
-      "length": 12,
-      "format": "alphanum",
-      "prefix": "SUMMER-",
-      "suffix": "",
-      "delimiter": "-",
-      "delimiter_at_every": 4,
-      "expiration_date": "2024-12-31"
-    }
-  }'
+  -d "$(jq -n \
+    --argjson rule_id "${RULE_ID}" \
+    --argjson qty "${QTY:-5}" \
+    --arg prefix "${PREFIX:-SUMMER-}" \
+    --arg expiry "${EXPIRY_DATE:-2024-12-31}" \
+    '{"couponSpec": {"rule_id": $rule_id, "quantity": $qty, "length": 12, "format": "alphanum", "prefix": $prefix, "suffix": "", "delimiter": "-", "delimiter_at_every": 4, "expiration_date": $expiry}}')"
 ```
 
 **Parameter reference:**

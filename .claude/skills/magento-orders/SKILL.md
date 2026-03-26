@@ -285,7 +285,7 @@ print(f'AOV: €{revenue/count:,.2f}' if count > 0 else 'AOV: n/a')
 ```bash
 curl -s -g "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/orders?searchCriteria[filterGroups][0][filters][0][field]=created_at&searchCriteria[filterGroups][0][filters][0][value]=2026-01-01 00:00:00&searchCriteria[filterGroups][0][filters][0][conditionType]=gteq&searchCriteria[pageSize]=100" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" | \
-  jq 'group_by(.status) | map({status: .[0].status, count: length, revenue: ([.[].grand_total] | add)}) | sort_by(.count) | reverse'
+  jq '.items | group_by(.status) | map({status: .[0].status, count: length, revenue: ([.[].grand_total] | add)}) | sort_by(.count) | reverse'
 ```
 
 ---
@@ -302,6 +302,8 @@ curl -s -g "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/carts?sea
 ```
 
 **Extract:** `entity_id`, `customer_email`, `customer_firstname`, `customer_lastname`, `grand_total`, `items_count`, `created_at`, `updated_at`, `items[].name`, `items[].sku`, `items[].qty`
+
+**PII note:** Mask `customer_email` in output (`r***@e***.com`). Show customer name as initials only (e.g., `V. C.`). Never display raw email addresses in abandoned cart reports.
 
 **Filter by cart value (high-value abandoned carts):**
 ```bash

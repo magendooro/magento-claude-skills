@@ -178,12 +178,6 @@ curl -s -g "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/returns?s
 
 ## Operation 11: Get Return by ID
 
-```bash
-curl -s "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/returns/${RETURN_ID}/labels" \
-  -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
-  -H "Content-Type: application/json"
-```
-
 Full return detail:
 ```bash
 curl -s "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/returns/${RETURN_ID}" \
@@ -191,9 +185,18 @@ curl -s "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/returns/${RE
   -H "Content-Type: application/json"
 ```
 
+Return shipping labels (if generated):
+```bash
+curl -s "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/returns/${RETURN_ID}/labels" \
+  -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
+  -H "Content-Type: application/json"
+```
+
 ---
 
 ## Response Formatting
+
+**PII note:** Fulfillment documents include customer addresses and emails. When displaying to support agents, mask emails (`r***@e***.com`), show street addresses as "[REDACTED]", and phone numbers as last 4 digits only (`***-1234`). Show city + state/country for context.
 
 **Invoice list:**
 ```

@@ -73,4 +73,4 @@ fi
 echo ""
 echo "  3. Verify: ask Claude 'run /magento-connect check'"
 echo ""
-echo "Docs: https://github.com/magendooroo/magento-claude-skills"
+echo "Docs: https://github.com/magendooro/magento-claude-skills"

@@ -1,8 +1,9 @@
 ---
 name: magento-connect
 description: Test Magento connectivity and show store configuration. Use when setting up or verifying the Magento connection.
-argument-hint: "[check|status]"
-allowed-tools: Bash(curl:*)
+argument-hint: "[check]"
+allowed-tools: Bash(curl:*), Bash(echo:*), Bash(jq:*)
+effort: low
 ---
 
 # Magento Connection Check
@@ -63,3 +64,7 @@ Report connectivity status:
 - REST Admin: OK/FAIL
 - Store: name, code, currency, timezone
 - Base URL confirmed
+
+## User Request
+
+$ARGUMENTS

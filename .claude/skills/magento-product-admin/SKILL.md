@@ -45,8 +45,12 @@ curl -s -g "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/products?
 
 ## Operation 2: Get Full Product Detail
 
+**URL encoding:** SKUs in path parameters must be percent-encoded. Encode with: `SKU_ENC=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$SKU")`
+
+Common cases: `/` → `%2F`, `+` → `%2B`, spaces → `%20`. Most alphanumeric SKUs (e.g. `WS03-XS-Red`) need no encoding.
+
 ```bash
-curl -s "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/products/${SKU}" \
+curl -s "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/products/${SKU_ENC}" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
   -H "Content-Type: application/json"
 ```
@@ -149,17 +153,17 @@ echo "Color ID for Red: $COLOR_ID"
 Quick status toggle:
 
 ```bash
-# Disable
+# Disable — jq safely encodes the SKU to prevent JSON injection
 curl -s -X PUT "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/products/${SKU}" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"product": {"sku": "'${SKU}'", "status": 2}}'
+  -d "$(jq -n --arg sku "$SKU" '{"product": {"sku": $sku, "status": 2}}')"
 
 # Enable
 curl -s -X PUT "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/V1/products/${SKU}" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"product": {"sku": "'${SKU}'", "status": 1}}'
+  -d "$(jq -n --arg sku "$SKU" '{"product": {"sku": $sku, "status": 1}}')"
 ```
 
 ---
@@ -192,7 +196,7 @@ Options: Black (ID: 49), Blue (ID: 50), Green (ID: 53), Orange (ID: 56), Purple 
 
 ## Error Handling
 
-- **`"The product that was requested doesn't exist"` (HTTP 404):** SKU not found. Check for URL encoding — SKUs with special characters may need encoding.
+- **`"The product that was requested doesn't exist"` (HTTP 404):** SKU not found. Ensure the SKU is URL-encoded in the path (see Op 2 encoding note).
 - **`"Invalid value of '...' for the 'color' attribute"` (HTTP 400):** Sending a label instead of option ID. Resolve with Op 4 first.
 - **`"Attribute X does not exist"` (HTTP 400):** Attribute code typo or attribute doesn't exist on this store.
 - **HTTP 401:** Token expired or invalid.

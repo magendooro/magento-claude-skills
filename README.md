@@ -43,7 +43,7 @@ All read operations work out of the box. Write operations (cancel order, update 
 ## Prerequisites
 
 - [Claude Code](https://code.claude.com) installed
-- `curl` and `jq` in your `PATH`
+- `curl`, `jq`, and `python3` in your `PATH`
 - Magento 2.3+ or Adobe Commerce, reachable over HTTPS
 - An integration token for admin operations ([how to create one](#creating-an-integration-token))
 

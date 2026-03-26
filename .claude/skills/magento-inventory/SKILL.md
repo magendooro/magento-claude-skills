@@ -131,12 +131,14 @@ Response: HTTP 200 with empty body on success.
 
 ---
 
-## Operation 5: Bulk Inventory Update (Async)
+## Operation 5: Bulk Inventory Update (Async — Confirm First)
 
 For updating many SKUs at once. Uses Magento's async bulk API — returns a `bulk_uuid` immediately, processes in background.
 
+**Confirm:** "I'll bulk-update inventory for X SKU(s) — this will overwrite existing quantities at the specified sources. Confirm? (yes/no)"
+
 ```bash
-curl -s -X POST "${MAGENTO_BASE_URL}/rest/async/bulk/V1/inventory/source-items" \
+curl -s -X POST "${MAGENTO_BASE_URL}/rest/${MAGENTO_STORE_CODE:-default}/async/bulk/V1/inventory/source-items" \
   -H "Authorization: Bearer ${MAGENTO_ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '[
